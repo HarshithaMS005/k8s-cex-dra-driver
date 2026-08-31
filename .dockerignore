@@ -1,0 +1,13 @@
+# Keep the image build context minimal. The build stage runs `make`, which only
+# needs the Go module sources and the Makefile itself - it includes nothing the
+# context would otherwise have to carry.
+# vendor/ is included so the image build compiles from the committed dependency
+# tree (go uses vendor/ automatically when present) instead of fetching modules
+# from the network - the same tree every other build path uses.
+*
+!go.mod
+!go.sum
+!Makefile
+!cmd
+!internal
+!vendor

@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Privileged dev overlay: ../dev-unpriv plus `privileged: true` on the plugin
+# container, for kubectl-exec debugging convenience. The unprivileged overlay is
+# the hardened default. This is the explicit relaxation, never the reverse
+# Image, skip-preflight, DeviceClasses, and namespace are all
+# inherited from dev-unpriv.
+resources:
+  - ../dev-unpriv
+
+# Opt privileged back in for local debugging (replaces the hardened base
+# securityContext wholesale).
+patches:
+  - target:
+      kind: DaemonSet
+      name: cex-dra-driver
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/securityContext
+        value:
+          privileged: true

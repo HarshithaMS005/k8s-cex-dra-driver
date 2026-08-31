@@ -1,0 +1,15 @@
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: ap-queue.container.ibm.com
+  labels:
+    app.kubernetes.io/name: cex-dra-driver
+spec:
+  # Driver-agnostic entry point: select every AP queue published by this
+  # driver. The vfio-ap vs zcrypt distinction is enforced at request time via
+  # the ResourceClaim selector/constraint on the cex.ibm.com/driver attribute,
+  # not here - that attribute carries the raw sysfs basename (vfio_ap /
+  # cexNqueue), so a DeviceClass-level equality selector is not viable.
+  selectors:
+    - cel:
+        expression: "device.driver == 'cex-driver.ibm.com'"

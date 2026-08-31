@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Everything-on development lane: dev-unpriv plus every alpha feature.
+# Dev/test only - AllAlpha is not a supported production surface.
+resources:
+  - ../dev-unpriv
+
+# Every components/feature-* directory is listed here. The completeness
+# check in `make manifests-check` fails the build when a new one is missing.
+components:
+  - ../../components/feature-container-workload
+
+# Applied after the components, so this env value replaces any per-feature
+# FEATURE_GATES entry a component set (env entries merge by name).
+# Semantically a superset: AllAlpha enables every alpha gate at once.
+# `make manifests-check` asserts the rendered value is exactly AllAlpha=true.
+patches:
+  - target:
+      kind: DaemonSet
+      name: cex-dra-driver
+    patch: |-
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: cex-dra-driver
+      spec:
+        template:
+          spec:
+            containers:
+              - name: plugin
+                env:
+                  - name: FEATURE_GATES
+                    value: AllAlpha=true

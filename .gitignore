@@ -1,0 +1,11 @@
+# Build binaries
+/cex-dra-kubeletplugin
+/cex-dra-kubeletplugin-*
+
+# Nix - canonical build is make, flake is supplementary dev tooling
+result
+result-*
+flake.lock
+
+# Health report (make ci-health-report)
+/.health/

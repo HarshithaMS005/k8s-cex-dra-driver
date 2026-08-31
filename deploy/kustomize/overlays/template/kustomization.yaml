@@ -1,0 +1,71 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Aggregator overlay. It deliberately sets no `namespace:` itself: the namespaced
+# workload is pulled from ./plugin (which applies the namespace), while the
+# cluster-scoped Namespace and DeviceClasses are added here so they never inherit
+# a namespace. See ./plugin/kustomization.yaml for why.
+resources:
+  - namespace.yaml
+  - plugin
+
+# DeviceClasses are opt-in. Omit a component to disable that class.
+# The skip-preflight component is
+# also available (../../components/skip-preflight) but is intentionally left out
+# of this example - it is for dev/demo clusters only. So is
+# ../../components/feature-container-workload: it opts into the alpha container
+# workload path (container DeviceClass + ContainerWorkload feature gate), which
+# is an unimplemented stub in this release.
+components:
+  - ../../components/deviceclass-vm
+  # VM path needs the writable /sys/devices/vfio_ap mount once the base is
+  # unprivileged. Safe here: this is a real, VM-capable deployment
+  # with vfio_ap loaded, so the type:Directory mount does not gate pod start.
+  - ../../components/vfio-ap-mounts
+  # Enforcing SELinux (default on Fedora/RHEL/CentOS): run the plugin
+  # SELinux-unconfined (seLinuxOptions.type: spc_t) so its AP sysfs_t writes are
+  # not denied. Stock, no per-node install. Omit on permissive / non-SELinux
+  # clusters (harmless either way).
+  - ../../components/selinux-spc
+
+# Point the DaemonSet at a real image. Replace newName/newTag with your
+# registry reference (see "Build and push the image" in
+# docs/installation/driver.md).
+# Pin a release tag - the base sets imagePullPolicy: IfNotPresent, so a
+# moving tag like `latest` is never re-pulled once a node holds any image
+# by that name and silently keeps running the stale build. For an
+# immutable reference, replace newTag with `digest: sha256:...`.
+images:
+  - name: cex-dra-kubeletplugin
+    newName: REGISTRY/cex-dra-kubeletplugin
+    newTag: v1.0.0-alpha.0
+
+# Keep in sync with newTag above - the label states which release runs, the
+# tag decides it. Applied here, at the aggregator, so the cluster-scoped
+# DeviceClasses and the Namespace carry the release marker too.
+labels:
+  - includeSelectors: false
+    includeTemplates: true
+    pairs:
+      app.kubernetes.io/version: v1.0.0-alpha.0
+
+# Example option override: change the scan interval. The explicit target matches
+# the DaemonSet regardless of namespace. The env entry merges into the base list
+# by name, so every other setting - and any component's - stays in place.
+patches:
+  - target:
+      kind: DaemonSet
+      name: cex-dra-driver
+    patch: |-
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: cex-dra-driver
+      spec:
+        template:
+          spec:
+            containers:
+              - name: plugin
+                env:
+                  - name: SCAN_INTERVAL
+                    value: 60s

@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespaced workload only (ServiceAccount, RBAC, DaemonSet). The namespace is
+# applied here, isolated from the cluster-scoped DeviceClasses aggregated one
+# level up - kustomize does not yet recognise resource.k8s.io/DeviceClass as
+# cluster-scoped, so a DeviceClass caught by this `namespace:` would wrongly gain
+# a namespace.
+namespace: cex-dra-driver
+
+resources:
+  - ../../../base

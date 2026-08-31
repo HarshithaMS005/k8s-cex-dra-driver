@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Default namespace so a bare `kubectl apply -k base` fails loudly on the
+# missing namespace instead of quietly landing the ServiceAccount in the
+# current context's namespace while the ClusterRoleBinding subject points at
+# cex-dra-driver (403s at runtime). The overlays retarget this via the
+# `namespace:` field in overlays/template/plugin. The Namespace object itself
+# ships only with the overlays.
+namespace: cex-dra-driver
+
+# Kubernetes recommended labels, applied to every base resource and the pod
+# template. Selectors are excluded on purpose: the DaemonSet selector is
+# immutable and must stay pinned to app.kubernetes.io/name alone.
+# app.kubernetes.io/version is overlay business - it tracks the image tag the
+# overlay pins (see overlays/template). instance and part-of are omitted: the
+# driver is a cluster singleton and belongs to no larger application.
+labels:
+  - includeSelectors: false
+    includeTemplates: true
+    pairs:
+      app.kubernetes.io/name: cex-dra-driver
+      app.kubernetes.io/component: kubelet-plugin
+      app.kubernetes.io/managed-by: kustomize
+
+resources:
+  - serviceaccount.yaml
+  - clusterrole.yaml
+  - clusterrolebinding.yaml
+  - daemonset.yaml

@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cex-dra-driver
+  labels:
+    app.kubernetes.io/name: cex-dra-driver
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cex-dra-driver
+subjects:
+  # The namespace is a placeholder. The overlay `namespace:` field retargets it
+  # to wherever the ServiceAccount is deployed.
+  - kind: ServiceAccount
+    name: cex-dra-driver
+    namespace: cex-dra-driver

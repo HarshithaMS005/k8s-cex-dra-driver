@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cex-dra-driver
+  labels:
+    # The DaemonSet exceeds the baseline Pod Security Standard: hostPath
+    # volumes (above baseline), runAsUser: 0 (above restricted), and with the
+    # selinux-spc component a non-default seLinuxOptions.type (above baseline).
+    # These labels take precedence over any cluster-wide default the
+    # PodSecurity admission configuration sets, so the install works unchanged
+    # on clusters that default to baseline or restricted. This is the
+    # namespace's admission tier, not the container: the pod itself stays
+    # unprivileged with all capabilities dropped and seccomp on.
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged

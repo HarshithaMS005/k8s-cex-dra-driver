@@ -1,0 +1,31 @@
+# Advisory health profile - metric linters, never blocks.
+# Run via: make health           (always exits 0, stdout only)
+# Run via: make ci-health-report (always exits 0, writes .health/report.json)
+# Counterpart: .golangci.yml (required gate).
+
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - dupl
+    - funlen
+    - gocognit
+    - gocyclo
+    - gosec
+    - maintidx
+    - nestif
+  settings:
+    gocyclo:
+      min-complexity: 15
+    gocognit:
+      min-complexity: 20
+    funlen:
+      lines: 80
+      statements: 40
+    dupl:
+      threshold: 100
+    maintidx:
+      under: 20
+    nestif:
+      min-complexity: 5

@@ -1,0 +1,46 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Local dev overlay, unprivileged: uses an image imported into containerd via
+# `ctr import`, not a registry. Reuses the template overlay's namespace + plugin
+# nesting so the cluster-scoped DeviceClasses stay namespace-free.
+#
+# Runs the hardened base security context as-is (unprivileged, root, all caps
+# dropped) - this overlay is how you exercise the hardened deployment
+# locally with the dev image. The privileged variant layers on top in ../dev-priv.
+#
+# Includes vfio-ap-mounts so the VM (mdev) path is writable under the hardened,
+# unprivileged base - without privileged, /sys is read-only and matrix writes
+# would EPERM otherwise. Note: that mount is hostPath type:Directory, a kubelet
+# pre-start gate, so this overlay now REQUIRES the vfio_ap module loaded on the
+# node (`modprobe vfio_ap`). On a bare node without it the pod will not start.
+# Drop the component below, or use ../dev-priv, for container-path-only dev.
+resources:
+  - namespace.yaml
+  - ../template/plugin
+
+# Alpha features are opt-in even for dev: this overlay stays the operator
+# mirror. To develop against the gated paths, use ../dev-alpha, which layers
+# every feature-* component plus AllAlpha=true on top of this one.
+components:
+  - ../../components/deviceclass-vm
+  # VM-path /sys/devices/vfio_ap mount (gates pod start on vfio_ap loaded)
+  - ../../components/vfio-ap-mounts
+  # Run SELinux-unconfined (spc_t) so the hardened context also works on an
+  # enforcing dev node. Harmless on a permissive / SELinux-disabled dev node.
+  - ../../components/selinux-spc
+  # dev/demo only: turns preflight errors into warnings
+  - ../../components/skip-preflight
+
+# Must match `ctr -n k8s.io images ls` exactly (podman tags as localhost/...).
+images:
+  - name: cex-dra-kubeletplugin
+    newName: localhost/cex-dra-kubeletplugin
+    newTag: dev
+
+# Mirrors the image tag, like the template overlay's version label does.
+labels:
+  - includeSelectors: false
+    includeTemplates: true
+    pairs:
+      app.kubernetes.io/version: dev

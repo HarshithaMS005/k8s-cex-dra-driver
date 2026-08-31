@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cex-dra-driver
+  labels:
+    app.kubernetes.io/name: cex-dra-driver
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cex-dra-driver
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cex-dra-driver
+    spec:
+      serviceAccountName: cex-dra-driver
+      priorityClassName: system-node-critical
+      nodeSelector:
+        kubernetes.io/arch: s390x
+      # Deliberately no tolerations: the base cannot guess an operator's taint
+      # key, and a blanket toleration would land the driver on fenced-off nodes
+      # where strict preflight crash-loops. Overlays with tainted crypto nodes
+      # patch one in - see "Node taints" in ../README.md.
+      containers:
+        - name: plugin
+          # Placeholder reference - not pullable. The overlay `images:`
+          # transformer rewrites this by name (cex-dra-kubeletplugin).
+          image: cex-dra-kubeletplugin:placeholder
+          imagePullPolicy: IfNotPresent
+          # Hardened: unprivileged, real root, all caps dropped, default seccomp.
+          # The driver only reads/writes AP sysfs and reads /proc/sysinfo. Those
+          # sysfs writes are DAC-gated (owner-write), which root satisfies with no
+          # capability. `privileged: true` is dropped here. The dev overlay opts
+          # it back in for debugging. Writable AP sysfs subtrees are the explicit
+          # bind mounts below (reads ride the container's own read-only /sys).
+          # /proc/sysinfo (machine-id source) needs no mount either - the
+          # container's own procfs exposes the same global node. The driver
+          # reads it at the default path.
+          # Every write the driver makes lands in a mounted volume - AP sysfs,
+          # the kubelet plugin directory (socket, KEP-5304 metadata), and
+          # /var/run/cdi - so the image's own filesystem is read-only. Logs go
+          # to stderr, not to a file. dev-priv replaces this block wholesale, so
+          # exec debugging there is unaffected.
+          securityContext:
+            privileged: false
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          # Requests keep the node-critical pod out of the BestEffort
+          # eviction class: under node memory pressure the kubelet evicts
+          # pods whose usage exceeds their requests first, so the request
+          # must cover normal usage. The memory limit bounds a leak. CPU is
+          # left unlimited so a hardware scan is never throttled.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          # Every driver option travels as an environment variable, never as an
+          # arg. A strategic-merge patch replaces a container's `args` list
+          # wholesale, so an overlay or component setting one option there would
+          # silently drop the rest. `env` entries merge by name and survive.
+          # The container therefore takes no args at all.
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            # The driver's own default, restated so the interval a node actually
+            # scans at is readable from the manifest.
+            - name: SCAN_INTERVAL
+              value: 30s
+            # Soft cap below the 128Mi cgroup limit: the Go GC collects
+            # harder as it approaches this value instead of letting a
+            # transient heap spike trigger an OOM kill. The 28Mi gap
+            # absorbs memory GOMEMLIMIT does not govern (stacks spikes,
+            # page-return latency).
+            - name: GOMEMLIMIT
+              value: 100MiB
+            # Liveness port. This and the probe below are one unit: the
+            # binary disables the service on a negative port, and Kustomize
+            # cannot drop a probe conditionally, so a deployment that turns
+            # the service off must patch both or the probe dials a dead port
+            # forever. Set through env, not args, for the same reason as
+            # everything above: a strategic-merge patch replaces args
+            # wholesale and would silently drop it.
+            - name: HEALTHCHECK_PORT
+              value: "51515"
+          # The scan loop can stop making progress without the process
+          # dying: reading a queue's master key verification pattern waits
+          # in the kernel with no timeout while the card stays configured,
+          # and the sockets the kubelet registration protocol talks to keep
+          # answering throughout. This
+          # probe reads the loop's own heartbeat, so a wedge becomes a
+          # restart instead of silently stale ResourceSlices. The staleness
+          # threshold the driver applies is derived from SCAN_INTERVAL and
+          # carries the tolerance; the timeout is explicit because kubelet's
+          # one-second default is what makes a probe flap, while this check
+          # is a guarded read of a timestamp.
+          livenessProbe:
+            grpc:
+              port: 51515
+              service: liveness
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: plugins-registry
+              mountPath: /var/lib/kubelet/plugins_registry
+            - name: plugins
+              mountPath: /var/lib/kubelet/plugins
+            - name: sys-devices-ap
+              mountPath: /sys/devices/ap
+            - name: sys-bus-ap
+              mountPath: /sys/bus/ap
+      volumes:
+        - name: plugins-registry
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: Directory
+        - name: plugins
+          hostPath:
+            path: /var/lib/kubelet/plugins
+            type: DirectoryOrCreate
+        - name: sys-devices-ap
+          hostPath:
+            path: /sys/devices/ap
+            type: Directory
+        - name: sys-bus-ap
+          hostPath:
+            path: /sys/bus/ap
+            type: Directory

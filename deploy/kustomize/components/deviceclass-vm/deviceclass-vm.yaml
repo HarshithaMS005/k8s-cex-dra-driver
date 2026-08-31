@@ -1,0 +1,30 @@
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: ap-queue.virtual-machine.ibm.com
+  labels:
+    app.kubernetes.io/name: cex-dra-driver
+spec:
+  # Driver-agnostic entry point: select every AP queue published by this
+  # driver. The vfio-ap vs zcrypt distinction is enforced at request time via
+  # the ResourceClaim selector/constraint on the cex.ibm.com/driver attribute,
+  # not here - that attribute carries the raw sysfs basename (vfio_ap /
+  # cexNqueue), so a DeviceClass-level equality selector is not viable.
+  selectors:
+    - cel:
+        expression: "device.driver == 'cex-driver.ibm.com'"
+  # The driver's built-in defaults, restated so an operator can read the
+  # effective configuration off the DeviceClass instead of the source. This
+  # block is documentation, not a dependency: the same values are hardcoded in
+  # the driver, so a custom DeviceClass that omits it behaves identically. A
+  # unit test asserts the two cannot drift apart.
+  #
+  # A claim overrides any of these field by field. What it omits it inherits.
+  config:
+    - opaque:
+        driver: cex-driver.ibm.com
+        parameters:
+          kind: CryptoConfig
+          apiVersion: cex.ibm.com/v1alpha1
+          # Control access to exactly the domains the claim was allocated.
+          controlDomainMode: "usage-and-control"

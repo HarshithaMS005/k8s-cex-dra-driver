@@ -1,0 +1,1764 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claim generator</title>
+<style>
+/*
+ * Offline-only stylesheet for the standalone claim generator page.
+ * It applies only here - the rendered documentation styles the same
+ * markup itself. It covers exactly the class vocabulary body.html and
+ * intro.html use, in simplified form: divergence costs polish offline,
+ * not correctness.
+ *
+ * Coverage contract (checked by the generator build script): every
+ * class the markup uses is either defined here as a ".name" selector
+ * or listed in the exempt line at the end of this file.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  line-height: 1.5;
+  color: #212529;
+  background: #fff;
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 4rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin: 0 0 1rem;
+}
+
+code {
+  font-family: SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.875em;
+  color: #9d1f5c;
+}
+
+pre {
+  font-family: SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  overflow-x: auto;
+}
+
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+/* Grid, simplified: a gap-based flex row instead of the negative-margin
+   gutters the rendered page uses. .g-3 restates the gap it selects
+   there so the selector exists for the coverage check. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.g-3 {
+  gap: 1rem;
+}
+
+.col-12 {
+  flex: 0 0 100%;
+}
+
+.col-md-4 {
+  flex: 0 0 100%;
+}
+
+@media (min-width: 768px) {
+  .col-md-4 {
+    flex: 0 0 calc(33.333% - 0.667rem);
+  }
+}
+
+.d-flex {
+  display: flex !important;
+}
+
+.d-block {
+  display: block !important;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+.align-items-end {
+  align-items: flex-end;
+}
+
+.justify-content-between {
+  justify-content: space-between;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+/* Spacing utilities keep their !important semantics so they beat
+   component margins (.form-text + .mt-0). */
+.mb-1 {
+  margin-bottom: 0.25rem !important;
+}
+
+.mb-3 {
+  margin-bottom: 1rem !important;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem !important;
+}
+
+.mt-0 {
+  margin-top: 0 !important;
+}
+
+.mt-2 {
+  margin-top: 0.5rem !important;
+}
+
+.mt-3 {
+  margin-top: 1rem !important;
+}
+
+/* Typography */
+.h5 {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+}
+
+.h6 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.fw-semibold {
+  font-weight: 600;
+}
+
+.font-monospace {
+  font-family: SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.form-text {
+  font-size: 0.875em;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.text-body-secondary {
+  color: #6c757d;
+}
+
+/* Darker than the usual amber, which is unreadable on white. */
+.text-warning {
+  color: #997404;
+}
+
+.invalid-feedback {
+  display: none;
+  font-size: 0.875em;
+  color: #dc3545;
+  margin-top: 0.25rem;
+}
+
+/* Forms */
+.form-label {
+  display: inline-block;
+  margin-bottom: 0.25rem;
+}
+
+.form-control,
+.form-select {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+}
+
+textarea.form-control {
+  resize: vertical;
+}
+
+.form-check {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.form-check-input {
+  margin-right: 0.375rem;
+}
+
+.form-check-label {
+  cursor: pointer;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  font: inherit;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  background: none;
+  cursor: pointer;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875em;
+}
+
+.btn-outline-secondary {
+  color: #6c757d;
+  border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+  color: #fff;
+  background: #6c757d;
+}
+
+/* Tables */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #dee2e6;
+  text-align: left;
+}
+
+.table-sm th,
+.table-sm td {
+  padding: 0.25rem 0.5rem;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background: #f8f9fa;
+}
+
+/* After the stripe rule on purpose: equal specificity, so source order
+   lets the match highlight win on striped rows. */
+.table tbody tr.table-success {
+  background: #d1e7dd;
+}
+
+.align-middle {
+  vertical-align: middle;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+/* Alerts */
+.alert {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+}
+
+.alert-secondary {
+  color: #41464b;
+  background: #e2e3e5;
+  border-color: #d3d6d8;
+}
+
+.alert-warning {
+  color: #664d03;
+  background: #fff3cd;
+  border-color: #ffecb5;
+}
+
+/* Generator-specific */
+.cg-pre {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  font-size: 0.875em;
+}
+
+/* Last on purpose: the hidden attribute must beat every display
+   utility above, matching what the generator script expects when it
+   toggles .hidden on elements that also carry d-flex or d-block. */
+[hidden] {
+  display: none !important;
+}
+
+/* JS hooks that carry no styling in either context.
+   The next line is machine-read by the generator build script. */
+/* exempt: cg-copy cg-count cg-generation cg-mkvp cg-mkvp-custom cg-mkvp-wrap cg-remove cg-remove-wrap cg-request cg-type cg-warn-mkvp */
+</style>
+</head>
+<body>
+<h1>Claim generator</h1>
+
+<!-- generator:intro begin -->
+<div class="alert alert-warning">
+  The claim generator is experimental and does not cover every claim option.
+  Its form and the manifests it emits may change or be removed in any release.
+  Review the output before applying it.
+  The Requesting queues and KubeVirt integration pages remain the canonical
+  documentation of the manifest shapes.
+</div>
+
+<p>
+  This page builds the documented manifests interactively, against the queues your
+  cluster actually publishes.
+  Run <code>kubectl get resourceslices -o json</code> against your cluster and paste
+  the output below.
+  Without a cluster, load the bundled sample inventory instead.
+  The live match preview shows what the scheduler can choose from, not what it
+  will pick.
+</p>
+
+<p>
+  Everything runs in your browser.
+  This page makes no network request.
+  The pasted inventory and the SSH public key never leave this page.
+</p>
+
+<noscript>
+  <div class="alert alert-secondary">
+    The claim generator needs JavaScript.
+    The Requesting queues and KubeVirt integration pages carry the documented
+    manifests.
+  </div>
+</noscript>
+<!-- generator:intro end -->
+<!-- generator:markup begin -->
+<div id="claim-generator" hidden>
+
+  <section class="mb-4">
+    <h2 class="h5">1. Inventory</h2>
+    <label for="cg-inventory" class="form-label">
+      Paste the output of <code>kubectl get resourceslices -o json</code>
+    </label>
+    <textarea id="cg-inventory" class="form-control font-monospace" rows="8"
+      spellcheck="false" autocomplete="off"></textarea>
+    <div id="cg-inventory-error" class="invalid-feedback d-block" hidden></div>
+    <div class="d-flex align-items-center gap-2 mt-2">
+      <button type="button" id="cg-load-sample" class="btn btn-sm btn-outline-secondary">
+        Load sample inventory
+      </button>
+      <span class="form-text mt-0">
+        Processed in your browser only; the pasted inventory and key are never transmitted.
+      </span>
+    </div>
+  </section>
+
+  <section class="mb-4">
+    <h2 class="h5">2. Published queues</h2>
+    <p id="cg-queue-empty" class="text-body-secondary">
+      Nothing loaded yet. Paste inventory above or load the sample.
+    </p>
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle" id="cg-queue-table" hidden>
+        <thead>
+          <tr>
+            <th>Node</th>
+            <th>apid</th>
+            <th>apqi</th>
+            <th>Type</th>
+            <th>Generation</th>
+            <th>Driver</th>
+            <th>MKVP</th>
+            <th>Match</th>
+          </tr>
+        </thead>
+        <tbody id="cg-queue-rows"></tbody>
+      </table>
+    </div>
+    <p id="cg-match-summary" class="fw-semibold"></p>
+  </section>
+
+  <section class="mb-4">
+    <h2 class="h5">3. DeviceClass</h2>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="cg-deviceclass" id="cg-class-vm"
+        value="ap-queue.virtual-machine.ibm.com" checked>
+      <label class="form-check-label" for="cg-class-vm">
+        <code>ap-queue.virtual-machine.ibm.com</code>
+        - vfio-ap passthrough to a KubeVirt virtual machine
+      </label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="cg-deviceclass" id="cg-class-container"
+        value="ap-queue.container.ibm.com">
+      <label class="form-check-label" for="cg-class-container">
+        <code>ap-queue.container.ibm.com</code>
+        - zcrypt device nodes for a container (feature gated, disabled at this stage)
+      </label>
+    </div>
+  </section>
+
+  <form class="mb-4" id="cg-form">
+    <section class="mb-4">
+      <h2 class="h5">4. Claim</h2>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="cg-name">Workload name</label>
+          <input type="text" class="form-control" id="cg-name" value="cex-demo"
+            autocomplete="off">
+          <div class="form-text text-warning" id="cg-warn-name" hidden></div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="cg-namespace">Namespace</label>
+          <input type="text" class="form-control" id="cg-namespace" value="default"
+            autocomplete="off">
+          <div class="form-text text-warning" id="cg-warn-namespace" hidden></div>
+        </div>
+      </div>
+      <div id="cg-requests"></div>
+      <div class="mt-3">
+        <button type="button" id="cg-add-request" class="btn btn-sm btn-outline-secondary">
+          Add request
+        </button>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4" id="cg-colocate-wrap" hidden>
+          <label class="form-label" for="cg-colocate">Co-location</label>
+          <select class="form-select" id="cg-colocate">
+            <option value="" selected>none</option>
+            <option value="cex.ibm.com/apqi">same domain (apqi)</option>
+            <option value="cex.ibm.com/apid">same adapter (apid)</option>
+          </select>
+          <div class="form-text text-warning" id="cg-warn-colocate" hidden></div>
+        </div>
+      </div>
+      <template id="cg-request-template">
+        <div class="cg-request row g-3 mt-0">
+          <div class="col-md-4">
+            <label class="form-label" for="cg-count">Queue count</label>
+            <input type="number" class="form-control cg-count" id="cg-count" value="1" min="1"
+              step="1">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="cg-type">Card type</label>
+            <select class="form-select cg-type" id="cg-type">
+              <option value="any" selected>any</option>
+              <option value="cca">cca</option>
+              <option value="ep11">ep11</option>
+              <option value="accel">accel</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="cg-generation">Minimum card generation</label>
+            <input type="number" class="form-control cg-generation" id="cg-generation"
+              placeholder="no minimum" min="1" step="1">
+          </div>
+          <div class="col-md-4 cg-mkvp-wrap" hidden>
+            <label class="form-label" for="cg-mkvp">Master key (MKVP) pin</label>
+            <select class="form-select cg-mkvp" id="cg-mkvp">
+              <option value="" selected>no pin</option>
+              <option value="__custom__">Custom&hellip;</option>
+            </select>
+            <input type="text" class="form-control mt-2 font-monospace cg-mkvp-custom"
+              id="cg-mkvp-custom" placeholder="MKVP hex value" autocomplete="off" hidden>
+            <div class="form-text text-warning cg-warn-mkvp" hidden></div>
+          </div>
+          <div class="col-md-4 d-flex align-items-end cg-remove-wrap" hidden>
+            <button type="button" class="btn btn-sm btn-outline-secondary cg-remove">
+              Remove
+            </button>
+          </div>
+        </div>
+      </template>
+    </section>
+
+    <fieldset class="mb-4" id="cg-vm-fields">
+      <section>
+        <h2 class="h5">5. Virtual machine</h2>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label" for="cg-sshkey">SSH public key</label>
+            <textarea class="form-control font-monospace" id="cg-sshkey" rows="2"
+              placeholder="ssh-ed25519 AAAA... user@host" spellcheck="false"
+              autocomplete="off"></textarea>
+            <div class="form-text text-warning" id="cg-warn-sshkey" hidden></div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="cg-cdmode">Control domain mode</label>
+            <select class="form-select" id="cg-cdmode">
+              <option value="usage-and-control" selected>usage-and-control (default)</option>
+              <option value="usage-only">usage-only</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="cg-memory">Guest memory</label>
+            <input type="text" class="form-control" id="cg-memory" value="1Gi"
+              autocomplete="off">
+            <div class="form-text text-warning" id="cg-warn-memory" hidden></div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="cg-image">Containerdisk image</label>
+            <input type="text" class="form-control" id="cg-image"
+              value="quay.io/containerdisks/fedora:latest" autocomplete="off">
+          </div>
+        </div>
+      </section>
+    </fieldset>
+  </form>
+
+  <section>
+    <h2 class="h5">6. Generated manifests</h2>
+    <p class="text-body-secondary">
+      Each block is a complete command; to save the YAML to a file instead,
+      select just the lines between the two heredoc markers.
+      A ResourceClaimTemplate spec is immutable: delete it before re-applying
+      with changed selectors.
+    </p>
+    <div id="cg-container-warning" class="alert alert-warning" hidden>
+      The container path is feature gated and disabled at this stage:
+      the claim admits, but the pod starts without a crypto device.
+    </div>
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <h3 class="h6 mb-1">ResourceClaimTemplate</h3>
+        <button type="button" class="btn btn-sm btn-outline-secondary cg-copy"
+          data-cg-target="cg-yaml-claim">Copy</button>
+      </div>
+      <pre class="cg-pre"><code id="cg-yaml-claim"></code></pre>
+    </div>
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <h3 class="h6 mb-1" id="cg-workload-heading">VirtualMachine</h3>
+        <button type="button" class="btn btn-sm btn-outline-secondary cg-copy"
+          data-cg-target="cg-yaml-workload">Copy</button>
+      </div>
+      <pre class="cg-pre"><code id="cg-yaml-workload"></code></pre>
+    </div>
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <h3 class="h6 mb-1">Verify</h3>
+        <button type="button" class="btn btn-sm btn-outline-secondary cg-copy"
+          data-cg-target="cg-verify">Copy</button>
+      </div>
+      <pre class="cg-pre"><code id="cg-verify"></code></pre>
+    </div>
+  </section>
+</div>
+<!-- generator:markup end -->
+<!-- generator:sample-inventory begin -->
+<script type="application/json" id="cg-sample-inventory">
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "resource.k8s.io/v1",
+      "kind": "ResourceSlice",
+      "metadata": {
+        "name": "00000-cex-driver.ibm.com-worker-1.example.com-a1b2c"
+      },
+      "spec": {
+        "driver": "cex-driver.ibm.com",
+        "nodeName": "worker-1.example.com",
+        "pool": {
+          "generation": 1,
+          "name": "worker-1.example.com-card04",
+          "resourceSliceCount": 1
+        },
+        "devices": [
+          {
+            "name": "ibm-3931-02-00000000000abc12-04-0006",
+            "attributes": {
+              "cex.cca.domain.ibm.com/mkvp_aes_cur": { "string": "7f902215156ccaec" },
+              "cex.cca.domain.ibm.com/mkvp_aes_new": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_aes_old": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_cur": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_new": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_old": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_cur": { "string": "00000000000000000000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_new": { "string": "00000000000000000000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_old": { "string": "00000000000000000000000000000000" },
+              "cex.ibm.com/apid": { "string": "04" },
+              "cex.ibm.com/apqi": { "string": "0006" },
+              "cex.ibm.com/driver": { "string": "cex4queue" },
+              "cex.ibm.com/generation": { "int": 8 },
+              "cex.ibm.com/machineid": { "string": "ibm-3931-02-00000000000abc12" },
+              "cex.ibm.com/mkvp_state": { "string": "known" },
+              "cex.ibm.com/type": { "string": "cca" }
+            }
+          },
+          {
+            "name": "ibm-3931-02-00000000000abc12-04-0011",
+            "attributes": {
+              "cex.cca.domain.ibm.com/mkvp_aes_cur": { "string": "7f902215156ccaec" },
+              "cex.cca.domain.ibm.com/mkvp_aes_new": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_aes_old": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_cur": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_new": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_old": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_cur": { "string": "00000000000000000000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_new": { "string": "00000000000000000000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_old": { "string": "00000000000000000000000000000000" },
+              "cex.ibm.com/apid": { "string": "04" },
+              "cex.ibm.com/apqi": { "string": "0011" },
+              "cex.ibm.com/driver": { "string": "cex4queue" },
+              "cex.ibm.com/generation": { "int": 8 },
+              "cex.ibm.com/machineid": { "string": "ibm-3931-02-00000000000abc12" },
+              "cex.ibm.com/mkvp_state": { "string": "known" },
+              "cex.ibm.com/type": { "string": "cca" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "resource.k8s.io/v1",
+      "kind": "ResourceSlice",
+      "metadata": {
+        "name": "00000-cex-driver.ibm.com-worker-1.example.com-d3e4f"
+      },
+      "spec": {
+        "driver": "cex-driver.ibm.com",
+        "nodeName": "worker-1.example.com",
+        "pool": {
+          "generation": 1,
+          "name": "worker-1.example.com-card05",
+          "resourceSliceCount": 1
+        },
+        "devices": [
+          {
+            "name": "ibm-3931-02-00000000000abc12-05-0006",
+            "attributes": {
+              "cex.cca.domain.ibm.com/mkvp_aes_cur": { "string": "1a2b3c4d5e6f7a8b" },
+              "cex.cca.domain.ibm.com/mkvp_aes_new": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_aes_old": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_cur": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_new": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_old": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_cur": { "string": "00000000000000000000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_new": { "string": "00000000000000000000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_old": { "string": "00000000000000000000000000000000" },
+              "cex.ibm.com/apid": { "string": "05" },
+              "cex.ibm.com/apqi": { "string": "0006" },
+              "cex.ibm.com/driver": { "string": "cex4queue" },
+              "cex.ibm.com/generation": { "int": 7 },
+              "cex.ibm.com/machineid": { "string": "ibm-3931-02-00000000000abc12" },
+              "cex.ibm.com/mkvp_state": { "string": "known" },
+              "cex.ibm.com/type": { "string": "cca" }
+            }
+          },
+          {
+            "name": "ibm-3931-02-00000000000abc12-05-0011",
+            "attributes": {
+              "cex.cca.domain.ibm.com/mkvp_aes_cur": { "string": "1a2b3c4d5e6f7a8b" },
+              "cex.cca.domain.ibm.com/mkvp_aes_new": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_aes_old": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_cur": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_new": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_old": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_cur": { "string": "00000000000000000000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_new": { "string": "00000000000000000000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_old": { "string": "00000000000000000000000000000000" },
+              "cex.ibm.com/apid": { "string": "05" },
+              "cex.ibm.com/apqi": { "string": "0011" },
+              "cex.ibm.com/driver": { "string": "cex4queue" },
+              "cex.ibm.com/generation": { "int": 7 },
+              "cex.ibm.com/machineid": { "string": "ibm-3931-02-00000000000abc12" },
+              "cex.ibm.com/mkvp_state": { "string": "known" },
+              "cex.ibm.com/type": { "string": "cca" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "resource.k8s.io/v1",
+      "kind": "ResourceSlice",
+      "metadata": {
+        "name": "00000-cex-driver.ibm.com-worker-1.example.com-g5h6i"
+      },
+      "spec": {
+        "driver": "cex-driver.ibm.com",
+        "nodeName": "worker-1.example.com",
+        "pool": {
+          "generation": 1,
+          "name": "worker-1.example.com-card0a",
+          "resourceSliceCount": 1
+        },
+        "devices": [
+          {
+            "name": "ibm-3931-02-00000000000abc12-0a-0006",
+            "attributes": {
+              "cex.ep11.domain.ibm.com/mkvp_wk_cur": { "string": "ef490ddfce10b330b86cfe6db2ae2db9" },
+              "cex.ep11.domain.ibm.com/mkvp_wk_new": { "string": "" },
+              "cex.ibm.com/apid": { "string": "0a" },
+              "cex.ibm.com/apqi": { "string": "0006" },
+              "cex.ibm.com/driver": { "string": "cex4queue" },
+              "cex.ibm.com/generation": { "int": 8 },
+              "cex.ibm.com/machineid": { "string": "ibm-3931-02-00000000000abc12" },
+              "cex.ibm.com/mkvp_state": { "string": "known" },
+              "cex.ibm.com/type": { "string": "ep11" }
+            }
+          },
+          {
+            "name": "ibm-3931-02-00000000000abc12-0a-0011",
+            "attributes": {
+              "cex.ep11.domain.ibm.com/mkvp_wk_cur": { "string": "ef490ddfce10b330b86cfe6db2ae2db9" },
+              "cex.ep11.domain.ibm.com/mkvp_wk_new": { "string": "" },
+              "cex.ibm.com/apid": { "string": "0a" },
+              "cex.ibm.com/apqi": { "string": "0011" },
+              "cex.ibm.com/driver": { "string": "cex4queue" },
+              "cex.ibm.com/generation": { "int": 8 },
+              "cex.ibm.com/machineid": { "string": "ibm-3931-02-00000000000abc12" },
+              "cex.ibm.com/mkvp_state": { "string": "known" },
+              "cex.ibm.com/type": { "string": "ep11" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "resource.k8s.io/v1",
+      "kind": "ResourceSlice",
+      "metadata": {
+        "name": "00000-cex-driver.ibm.com-worker-1.example.com-j7k8l"
+      },
+      "spec": {
+        "driver": "cex-driver.ibm.com",
+        "nodeName": "worker-1.example.com",
+        "pool": {
+          "generation": 1,
+          "name": "worker-1.example.com-card0f",
+          "resourceSliceCount": 1
+        },
+        "devices": [
+          {
+            "name": "ibm-3931-02-00000000000abc12-0f-0006",
+            "attributes": {
+              "cex.ibm.com/apid": { "string": "0f" },
+              "cex.ibm.com/apqi": { "string": "0006" },
+              "cex.ibm.com/driver": { "string": "cex4queue" },
+              "cex.ibm.com/generation": { "int": 7 },
+              "cex.ibm.com/machineid": { "string": "ibm-3931-02-00000000000abc12" },
+              "cex.ibm.com/mkvp_state": { "string": "known" },
+              "cex.ibm.com/type": { "string": "accel" }
+            }
+          },
+          {
+            "name": "ibm-3931-02-00000000000abc12-0f-0011",
+            "attributes": {
+              "cex.ibm.com/apid": { "string": "0f" },
+              "cex.ibm.com/apqi": { "string": "0011" },
+              "cex.ibm.com/driver": { "string": "cex4queue" },
+              "cex.ibm.com/generation": { "int": 7 },
+              "cex.ibm.com/machineid": { "string": "ibm-3931-02-00000000000abc12" },
+              "cex.ibm.com/mkvp_state": { "string": "known" },
+              "cex.ibm.com/type": { "string": "accel" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "resource.k8s.io/v1",
+      "kind": "ResourceSlice",
+      "metadata": {
+        "name": "00000-cex-driver.ibm.com-worker-2.example.com-m9n0p"
+      },
+      "spec": {
+        "driver": "cex-driver.ibm.com",
+        "nodeName": "worker-2.example.com",
+        "pool": {
+          "generation": 1,
+          "name": "worker-2.example.com-card03",
+          "resourceSliceCount": 1
+        },
+        "devices": [
+          {
+            "name": "ibm-8561-02-00000000000def34-03-0006",
+            "attributes": {
+              "cex.cca.domain.ibm.com/mkvp_aes_cur": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_aes_new": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_aes_old": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_cur": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_new": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_apka_old": { "string": "0000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_cur": { "string": "00000000000000000000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_new": { "string": "00000000000000000000000000000000" },
+              "cex.cca.domain.ibm.com/mkvp_asym_old": { "string": "00000000000000000000000000000000" },
+              "cex.ibm.com/apid": { "string": "03" },
+              "cex.ibm.com/apqi": { "string": "0006" },
+              "cex.ibm.com/driver": { "string": "cex4queue" },
+              "cex.ibm.com/generation": { "int": 6 },
+              "cex.ibm.com/machineid": { "string": "ibm-8561-02-00000000000def34" },
+              "cex.ibm.com/mkvp_state": { "string": "known" },
+              "cex.ibm.com/type": { "string": "cca" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "resource.k8s.io/v1",
+      "kind": "ResourceSlice",
+      "metadata": {
+        "name": "00000-cex-driver.ibm.com-worker-2.example.com-q1r2s"
+      },
+      "spec": {
+        "driver": "cex-driver.ibm.com",
+        "nodeName": "worker-2.example.com",
+        "pool": {
+          "generation": 1,
+          "name": "worker-2.example.com-card07",
+          "resourceSliceCount": 1
+        },
+        "devices": [
+          {
+            "name": "ibm-8561-02-00000000000def34-07-0006",
+            "attributes": {
+              "cex.ep11.domain.ibm.com/mkvp_wk_cur": { "string": "unknown" },
+              "cex.ep11.domain.ibm.com/mkvp_wk_new": { "string": "unknown" },
+              "cex.ibm.com/apid": { "string": "07" },
+              "cex.ibm.com/apqi": { "string": "0006" },
+              "cex.ibm.com/driver": { "string": "cex4queue" },
+              "cex.ibm.com/generation": { "int": 7 },
+              "cex.ibm.com/machineid": { "string": "ibm-8561-02-00000000000def34" },
+              "cex.ibm.com/mkvp_state": { "string": "unknown" },
+              "cex.ibm.com/type": { "string": "ep11" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "resource.k8s.io/v1",
+      "kind": "ResourceSlice",
+      "metadata": {
+        "name": "00000-gpu.example.com-worker-2.example.com-t3u4v"
+      },
+      "spec": {
+        "driver": "gpu.example.com",
+        "nodeName": "worker-2.example.com",
+        "pool": {
+          "generation": 1,
+          "name": "worker-2.example.com-gpu0",
+          "resourceSliceCount": 1
+        },
+        "devices": [
+          {
+            "name": "gpu-0",
+            "attributes": {
+              "gpu.example.com/model": { "string": "example-gpu" }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+</script>
+<!-- generator:sample-inventory end -->
+<!-- generator:script begin -->
+<script>
+"use strict";
+(() => {
+// Interactive claim generator. Parses pasted `kubectl get resourceslices
+// -o json` output, mirrors the selector shapes the docs describe, and
+// renders copy-paste-ready manifests. Everything runs client-side.
+
+// The sample inventory travels in the document's JSON data block, so the
+// script needs no module import and runs from file:// as well.
+const sampleInventory = JSON.parse(
+  document.getElementById("cg-sample-inventory").textContent,
+);
+
+// --- Section A: emitted strings -----------------------------------------
+// Every literal that ends up in generated YAML or CEL lives in this
+// section, so the emitted dialect can only drift from the documented one
+// in a single place.
+
+const DRIVER = "cex-driver.ibm.com";
+const DEVICE_CLASS_VM = "ap-queue.virtual-machine.ibm.com";
+const DEVICE_CLASS_CONTAINER = "ap-queue.container.ibm.com";
+const ATTR_CORE = "cex.ibm.com";
+const ATTR_CCA = "cex.cca.domain.ibm.com";
+const ATTR_EP11 = "cex.ep11.domain.ibm.com";
+const CRYPTOCONFIG_KIND = "CryptoConfig";
+const CRYPTOCONFIG_APIVERSION = "cex.ibm.com/v1alpha1";
+const DEFAULT_CONTROL_DOMAIN_MODE = "usage-and-control";
+const REQUEST_NAME = "ap-queue";
+const CLAIM_REF = "claim0";
+const HOSTDEV_NAME = "cex-queue";
+
+function requestBaseName(cardType) {
+  return cardType === "any" ? "ap-queues" : `${cardType}-queues`;
+}
+
+// A single request keeps the historical name; several requests get the
+// documented multi-request dialect, deduplicated with a numeric suffix
+// (first occurrence unsuffixed).
+function deriveRequestNames(requests) {
+  if (requests.length === 1) return [REQUEST_NAME];
+  const seen = new Map();
+  return requests.map((r) => {
+    const base = requestBaseName(r.cardType);
+    const n = (seen.get(base) || 0) + 1;
+    seen.set(base, n);
+    return n === 1 ? base : `${base}-${n}`;
+  });
+}
+
+// Plain YAML scalars that need no quoting; everything else is emitted as
+// a JSON string, which is a valid YAML double-quoted scalar.
+const PLAIN_SCALAR = /^[A-Za-z0-9._:/@-]+$/;
+
+function yamlScalar(v) {
+  return PLAIN_SCALAR.test(v) ? v : JSON.stringify(v);
+}
+
+// A JSON string literal is also a valid CEL string literal.
+function celString(v) {
+  return JSON.stringify(v);
+}
+
+function celType(type) {
+  return `device.attributes["${ATTR_CORE}"].type == ${celString(type)}`;
+}
+
+function celGeneration(min) {
+  return `device.attributes["${ATTR_CORE}"].generation >= ${min}`;
+}
+
+function mkvpAttr(type) {
+  return type === "ep11"
+    ? { domain: ATTR_EP11, field: "mkvp_wk_cur" }
+    : { domain: ATTR_CCA, field: "mkvp_aes_cur" };
+}
+
+// The driver publishes this literal as the per-key MKVP attribute value
+// when it could not read the queue's master keys (mkvp_state unknown).
+const MKVP_UNKNOWN = "unknown";
+
+// An empty or all-zero published value is a successful read of a domain
+// with no master key set; neither is a pinnable master key.
+function isMkvpValue(value) {
+  return Boolean(value) && value !== MKVP_UNKNOWN && !/^0+$/.test(value);
+}
+
+function celTypeAndMkvp(type, value) {
+  const { domain, field } = mkvpAttr(type);
+  return (
+    `${celType(type)} &&\n` +
+    `device.attributes["${domain}"].${field} == ${celString(value)}`
+  );
+}
+
+// The expression string and the preview predicate are built side by side:
+// the preview evaluates exactly the selectors the claim will carry,
+// nothing more general.
+function buildSelectors(request) {
+  const selectors = [];
+  if (request.cardType !== "any" && request.mkvp) {
+    const { domain, field } = mkvpAttr(request.cardType);
+    const key = `${domain}/${field}`;
+    selectors.push({
+      folded: true,
+      expression: celTypeAndMkvp(request.cardType, request.mkvp),
+      predicate: (d) => d.type === request.cardType && d.attrs[key] === request.mkvp,
+    });
+  } else if (request.cardType !== "any") {
+    selectors.push({
+      expression: celType(request.cardType),
+      predicate: (d) => d.type === request.cardType,
+    });
+  }
+  if (request.minGeneration !== null) {
+    selectors.push({
+      expression: celGeneration(request.minGeneration),
+      predicate: (d) => typeof d.generation === "number" && d.generation >= request.minGeneration,
+    });
+  }
+  return selectors;
+}
+
+function renderClaimYaml(state, requests) {
+  const lines = [
+    "apiVersion: resource.k8s.io/v1",
+    "kind: ResourceClaimTemplate",
+    "metadata:",
+    `  namespace: ${yamlScalar(state.namespace)}`,
+    `  name: ${yamlScalar(state.claimTemplateName)}`,
+    "spec:",
+    "  spec:",
+    "    devices:",
+    "      requests:",
+  ];
+  for (const r of requests) {
+    lines.push(`        - name: ${r.name}`);
+    lines.push("          exactly:");
+    lines.push(`            deviceClassName: ${state.deviceClass}`);
+    lines.push("            allocationMode: ExactCount");
+    lines.push(`            count: ${r.count}`);
+    if (r.selectors.length > 0) {
+      lines.push("            selectors:");
+      for (const s of r.selectors) {
+        lines.push("              - cel:");
+        if (s.folded) {
+          lines.push("                  expression: >-");
+          for (const part of s.expression.split("\n")) {
+            lines.push(`                    ${part}`);
+          }
+        } else {
+          lines.push(`                  expression: ${s.expression}`);
+        }
+      }
+    }
+  }
+  if (state.matchAttribute) {
+    lines.push("      constraints:");
+    lines.push(`        - requests: [${requests.map((r) => `"${r.name}"`).join(", ")}]`);
+    lines.push(`          matchAttribute: ${state.matchAttribute}`);
+  }
+  if (state.deviceClass === DEVICE_CLASS_VM && state.controlDomainMode !== DEFAULT_CONTROL_DOMAIN_MODE) {
+    lines.push("      config:");
+    lines.push("        - opaque:");
+    lines.push(`            driver: ${DRIVER}`);
+    lines.push("            parameters:");
+    lines.push(`              kind: ${CRYPTOCONFIG_KIND}`);
+    lines.push(`              apiVersion: ${CRYPTOCONFIG_APIVERSION}`);
+    lines.push(`              controlDomainMode: "${state.controlDomainMode}"`);
+  }
+  return lines.join("\n") + "\n";
+}
+
+function renderVmYaml(state, requests) {
+  const lines = [
+    "apiVersion: kubevirt.io/v1",
+    "kind: VirtualMachine",
+    "metadata:",
+    `  namespace: ${yamlScalar(state.namespace)}`,
+    `  name: ${yamlScalar(state.name)}`,
+    "spec:",
+    "  runStrategy: Always",
+    "  template:",
+    "    spec:",
+    "      domain:",
+    "        devices:",
+    "          disks:",
+    "            - name: containerdisk",
+    "              disk:",
+    "                bus: virtio",
+    "            - name: cloudinit",
+    "              disk:",
+    "                bus: virtio",
+    "          hostDevices:",
+    // libvirt accepts a single vfio-ap hostdev per guest, and the
+    // claim's one mediated device already carries every allocated
+    // queue, so the whole claim is wired through one entry referencing
+    // the first request.
+    `            - name: ${HOSTDEV_NAME}`,
+    `              claimName: ${CLAIM_REF}`,
+    `              requestName: ${requests[0].name}`,
+    "          rng: {}",
+    "        features:",
+    "          acpi: {}",
+    "        resources:",
+    "          requests:",
+    `            memory: ${yamlScalar(state.memory)}`,
+    "          limits:",
+    `            memory: ${yamlScalar(state.memory)}`,
+    "      terminationGracePeriodSeconds: 180",
+    "      volumes:",
+    "        - name: containerdisk",
+    "          containerDisk:",
+    `            image: ${yamlScalar(state.image)}`,
+    "        - name: cloudinit",
+    "          cloudInitNoCloud:",
+    "            userData: |-",
+    "              #cloud-config",
+    "              user: fedora",
+    "              password: fedora",
+    "              chpasswd: { expire: False }",
+    // Key-only login when a key is pasted; without one, fall back to
+    // password auth so virtctl ssh still gets in (fedora/fedora).
+    `              ssh_pwauth: ${state.sshKey ? "False" : "True"}`,
+  ];
+  if (state.sshKey) {
+    lines.push("              ssh_authorized_keys:");
+    lines.push(`                - ${JSON.stringify(state.sshKey)}`);
+  }
+  lines.push("      resourceClaims:");
+  lines.push(`        - name: ${CLAIM_REF}`);
+  lines.push(`          resourceClaimTemplateName: ${yamlScalar(state.claimTemplateName)}`);
+  return lines.join("\n") + "\n";
+}
+
+function renderPodYaml(state) {
+  const lines = [
+    "apiVersion: v1",
+    "kind: Pod",
+    "metadata:",
+    `  namespace: ${yamlScalar(state.namespace)}`,
+    `  name: ${yamlScalar(state.name)}`,
+    "spec:",
+    "  restartPolicy: Never",
+    "  containers:",
+    "    - name: main",
+    "      image: fedora:latest",
+    '      command: ["bash", "-c"]',
+    "      args: [\"trap 'exit 0' TERM; sleep 9999 & wait\"]",
+    "      resources:",
+    "        claims:",
+    `          - name: ${CLAIM_REF}`,
+    "  resourceClaims:",
+    `    - name: ${CLAIM_REF}`,
+    `      resourceClaimTemplateName: ${yamlScalar(state.claimTemplateName)}`,
+  ];
+  return lines.join("\n") + "\n";
+}
+
+// The delimiter is quoted so the shell expands nothing inside the
+// document ($, backticks in ssh key comments pass through verbatim).
+function wrapKubectlApply(yaml) {
+  return `kubectl apply -f - <<'EOF'\n${yaml}EOF\n`;
+}
+
+function renderVerifyCommands(state) {
+  const ns = state.namespace;
+  const lines = [`kubectl get resourceclaims -n ${ns} -o wide`];
+  if (state.deviceClass === DEVICE_CLASS_VM) {
+    lines.push(`kubectl get vmi -n ${ns} ${state.name}`);
+    lines.push(`virtctl ssh fedora@vm/${state.name}/${ns} -c 'lszcrypt'`);
+  } else {
+    lines.push(`kubectl get pod -n ${ns} ${state.name}`);
+  }
+  return lines.join("\n") + "\n";
+}
+
+// --- Section B: inventory parsing ---------------------------------------
+
+function attrValue(a) {
+  if (a === null || typeof a !== "object") {
+    return a;
+  }
+  if ("string" in a) return a.string;
+  if ("int" in a) return a.int;
+  if ("bool" in a) return a.bool;
+  if ("version" in a) return a.version;
+  return undefined;
+}
+
+function normalizeDevice(spec, dev) {
+  const attrs = {};
+  for (const [key, value] of Object.entries(dev.attributes || {})) {
+    attrs[key] = attrValue(value);
+  }
+  return {
+    node: spec.nodeName || "",
+    name: dev.name || "",
+    // apid and apqi are zero-padded hex strings; never parse them as
+    // numbers or distinct values would collapse.
+    apid: attrs[`${ATTR_CORE}/apid`] || "",
+    apqi: attrs[`${ATTR_CORE}/apqi`] || "",
+    type: attrs[`${ATTR_CORE}/type`] || "",
+    generation: attrs[`${ATTR_CORE}/generation`],
+    driver: attrs[`${ATTR_CORE}/driver`] || "",
+    attrs,
+  };
+}
+
+// Throws on invalid JSON; the caller keeps the last good inventory.
+function parseInventory(text) {
+  const trimmed = text.trim();
+  if (trimmed === "") {
+    return { devices: [], foreignSlices: 0, empty: true };
+  }
+  const doc = JSON.parse(trimmed);
+  let slices = [];
+  if (doc && Array.isArray(doc.items)) {
+    slices = doc.items;
+  } else if (doc && doc.kind === "ResourceSlice") {
+    slices = [doc];
+  }
+  const devices = [];
+  let foreignSlices = 0;
+  for (const slice of slices) {
+    const spec = slice && slice.spec;
+    if (!spec) continue;
+    if (spec.driver !== DRIVER) {
+      foreignSlices += 1;
+      continue;
+    }
+    for (const dev of spec.devices || []) {
+      devices.push(normalizeDevice(spec, dev));
+    }
+  }
+  devices.sort(
+    (a, b) =>
+      a.node.localeCompare(b.node) ||
+      a.apid.localeCompare(b.apid) ||
+      a.apqi.localeCompare(b.apqi)
+  );
+  return { devices, foreignSlices, empty: false };
+}
+
+// --- Section C: form state and matching ---------------------------------
+
+const RFC1123_LABEL = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
+const SSH_KEY_PREFIX = /^(ssh-(ed25519|rsa|dss)|ecdsa-sha2-|sk-)/;
+const QUANTITY = /^[0-9]+(\.[0-9]+)?(Ki|Mi|Gi|Ti|k|M|G|T)?$/;
+const HEX_VALUE = /^[0-9a-f]+$/;
+
+function el(id) {
+  return document.getElementById(id);
+}
+
+function readFormState() {
+  const deviceClass = el("cg-class-container").checked
+    ? DEVICE_CLASS_CONTAINER
+    : DEVICE_CLASS_VM;
+  const name = el("cg-name").value.trim() || "cex-demo";
+  const namespace = el("cg-namespace").value.trim() || "default";
+  const requests = [];
+  for (const row of document.querySelectorAll("#cg-requests .cg-request")) {
+    const count = Math.max(1, parseInt(row.querySelector(".cg-count").value, 10) || 1);
+    const cardType = row.querySelector(".cg-type").value;
+    const generationRaw = row.querySelector(".cg-generation").value.trim();
+    const minGeneration = generationRaw === "" ? null : parseInt(generationRaw, 10);
+    let mkvp = "";
+    if (cardType === "cca" || cardType === "ep11") {
+      mkvp = row.querySelector(".cg-mkvp").value;
+      if (mkvp === "__custom__") {
+        mkvp = row.querySelector(".cg-mkvp-custom").value.trim();
+      }
+    }
+    requests.push({
+      row,
+      count,
+      cardType,
+      minGeneration: Number.isNaN(minGeneration) ? null : minGeneration,
+      mkvp,
+    });
+  }
+  let totalCount = 0;
+  for (const r of requests) {
+    totalCount += r.count;
+  }
+  // When the co-location control first becomes visible for a VM claim,
+  // default to the same-domain constraint the driver's mediated device
+  // needs; an explicit "none" chosen while visible sticks.
+  if (totalCount > 1 && el("cg-colocate-wrap").hidden && deviceClass === DEVICE_CLASS_VM) {
+    el("cg-colocate").value = `${ATTR_CORE}/apqi`;
+  }
+  const matchAttribute = totalCount > 1 ? el("cg-colocate").value : "";
+  // The pasted key must stay newline-free: a raw newline inside the
+  // cloud-init block scalar would terminate it and inject YAML.
+  const sshKey = el("cg-sshkey").value.trim().replace(/\s*\r?\n\s*/g, " ");
+  return {
+    deviceClass,
+    name,
+    claimTemplateName: `${name}-claim`,
+    namespace,
+    requests,
+    totalCount,
+    matchAttribute,
+    controlDomainMode: el("cg-cdmode").value,
+    sshKey,
+    memory: el("cg-memory").value.trim() || "1Gi",
+    image: el("cg-image").value.trim() || "quay.io/containerdisks/fedora:latest",
+  };
+}
+
+// Greedy disjoint assignment of pool devices to requests, most
+// constrained (fewest candidates) first. Exact when the requests'
+// selectors are disjoint; may under-report with overlapping selectors,
+// which the summary wording acknowledges.
+function greedyAssign(requests, pool) {
+  const candidates = requests.map((r) => pool.filter((d) => r.selectors.every((s) => s.predicate(d))));
+  const order = requests
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => candidates[a.i].length - candidates[b.i].length || a.i - b.i);
+  const used = new Set();
+  let satisfied = 0;
+  let assigned = 0;
+  for (const { r, i } of order) {
+    const avail = candidates[i].filter((d) => !used.has(d));
+    if (avail.length < r.count) {
+      return {
+        ok: false,
+        satisfied,
+        assigned,
+        shortName: r.name,
+        shortHave: avail.length,
+        shortWant: r.count,
+      };
+    }
+    for (const d of avail.slice(0, r.count)) {
+      used.add(d);
+    }
+    satisfied += 1;
+    assigned += r.count;
+  }
+  return { ok: true, satisfied, assigned };
+}
+
+// Among greedy attempts, any success wins; among failures prefer the
+// one that got furthest (satisfied requests, then assigned queues,
+// then the closest shortfall).
+function betterAttempt(a, b) {
+  if (!a) return b;
+  if (a.ok) return a;
+  if (b.ok) return b;
+  if (b.satisfied !== a.satisfied) return b.satisfied > a.satisfied ? b : a;
+  if (b.assigned !== a.assigned) return b.assigned > a.assigned ? b : a;
+  return b.shortHave > a.shortHave ? b : a;
+}
+
+function computeMatches(devices, requests, state) {
+  const matchNames = new Map();
+  for (const d of devices) {
+    const names = [];
+    for (const r of requests) {
+      if (r.selectors.every((s) => s.predicate(d))) {
+        names.push(r.name);
+      }
+    }
+    if (names.length > 0) {
+      matchNames.set(d, names);
+    }
+  }
+  const byNode = new Map();
+  for (const d of matchNames.keys()) {
+    if (!byNode.has(d.node)) byNode.set(d.node, []);
+    byNode.get(d.node).push(d);
+  }
+  const attrKey = state.matchAttribute.endsWith("/apid") ? "apid" : "apqi";
+  const nodeCapacity = new Map();
+  const nodeResults = new Map();
+  for (const [node, devs] of byNode) {
+    let pools = [devs];
+    if (state.matchAttribute) {
+      const groups = new Map();
+      for (const d of devs) {
+        const value = d[attrKey];
+        if (!groups.has(value)) groups.set(value, []);
+        groups.get(value).push(d);
+      }
+      pools = [...groups.values()];
+    }
+    let capacity = 0;
+    let result = null;
+    for (const pool of pools) {
+      capacity = Math.max(capacity, pool.length);
+      if (!result || !result.ok) {
+        result = betterAttempt(result, greedyAssign(requests, pool));
+      }
+    }
+    nodeCapacity.set(node, capacity);
+    nodeResults.set(node, result);
+  }
+  return { matchNames, nodeCapacity, nodeResults };
+}
+
+function summarize(devices, matches, requests, state) {
+  if (devices.length === 0) {
+    return "";
+  }
+  const { matchNames, nodeCapacity, nodeResults } = matches;
+  const groupNote = state.matchAttribute
+    ? ` sharing one ${state.matchAttribute.endsWith("/apid") ? "adapter" : "domain"}`
+    : "";
+  const head = `${matchNames.size} of ${devices.length} queues match the current selectors.`;
+  if (matchNames.size === 0) {
+    return head;
+  }
+  if (requests.length === 1) {
+    let best = 0;
+    let bestNode = "";
+    for (const [node, capacity] of nodeCapacity) {
+      if (capacity > best) {
+        best = capacity;
+        bestNode = node;
+      }
+    }
+    const count = requests[0].count;
+    if (best >= count) {
+      return (
+        `${head} Node ${bestNode} can satisfy the claim` +
+        ` (${count} queue${count > 1 ? "s" : ""}${groupNote}).` +
+        " The preview shows what the scheduler can choose from, not what it will pick."
+      );
+    }
+    return (
+      `${head} No node can satisfy count ${count}${groupNote};` +
+      ` the largest candidate set is ${best}.` +
+      " The YAML is still generated - the cluster may grow."
+    );
+  }
+  const nodes = [...nodeResults.keys()].sort();
+  for (const node of nodes) {
+    if (nodeResults.get(node).ok) {
+      return (
+        `${head} Node ${node} can satisfy all ${requests.length} requests` +
+        ` (${state.totalCount} queues${groupNote}).` +
+        " The preview shows what the scheduler can choose from, not what it will pick."
+      );
+    }
+  }
+  let closest = null;
+  let closestNode = "";
+  for (const node of nodes) {
+    const better = betterAttempt(closest, nodeResults.get(node));
+    if (better !== closest) {
+      closest = better;
+      closestNode = node;
+    }
+  }
+  const overlap = [...matchNames.values()].some((names) => names.length > 1);
+  return (
+    `${head} No node can satisfy all ${requests.length} requests${groupNote};` +
+    ` the closest, ${closestNode}, leaves request ${closest.shortName}` +
+    ` with ${closest.shortHave} of ${closest.shortWant} queue${closest.shortWant > 1 ? "s" : ""}.` +
+    (overlap ? " The check is greedy and may miss a valid assignment." : "") +
+    " The YAML is still generated - the cluster may grow."
+  );
+}
+
+// --- Section D: rendering ------------------------------------------------
+
+function setText(id, text) {
+  el(id).textContent = text;
+}
+
+function setWarningEl(node, text) {
+  node.textContent = text || "";
+  node.hidden = !text;
+}
+
+function setWarning(id, text) {
+  setWarningEl(el(id), text);
+}
+
+// The MKVP column shows the value a pin compares against (the per-type
+// current master key), not the driver's internal read-state; the full
+// value is revealed on hover via the cell title.
+function mkvpCell(d) {
+  if (d.type !== "cca" && d.type !== "ep11") {
+    return { text: "", title: "" };
+  }
+  const { domain, field } = mkvpAttr(d.type);
+  const value = d.attrs[`${domain}/${field}`];
+  if (value === undefined || value === MKVP_UNKNOWN) {
+    return { text: "unknown", title: "" };
+  }
+  if (!isMkvpValue(value)) {
+    return { text: "not set", title: "" };
+  }
+  return { text: `${value.slice(0, 6)}…`, title: value };
+}
+
+function renderTable(devices, matchNames, singleRequest, foreignSlices, parsedEmpty) {
+  const table = el("cg-queue-table");
+  const emptyNote = el("cg-queue-empty");
+  const rows = el("cg-queue-rows");
+  rows.textContent = "";
+  if (devices.length === 0) {
+    table.hidden = true;
+    emptyNote.hidden = false;
+    emptyNote.textContent = parsedEmpty
+      ? "Nothing loaded yet. Paste inventory above or load the sample."
+      : `No devices of driver ${DRIVER} in the input` +
+        (foreignSlices > 0
+          ? ` (${foreignSlices} foreign ResourceSlice${foreignSlices > 1 ? "s" : ""} ignored).`
+          : ".");
+    return;
+  }
+  table.hidden = false;
+  emptyNote.hidden = true;
+  for (const d of devices) {
+    const tr = document.createElement("tr");
+    const names = matchNames.get(d) || [];
+    if (names.length > 0) {
+      tr.className = "table-success";
+    }
+    const mkvp = mkvpCell(d);
+    const cells = [
+      d.node,
+      d.apid,
+      d.apqi,
+      d.type,
+      d.generation === undefined ? "" : String(d.generation),
+      d.driver,
+      mkvp.text,
+      names.length === 0 ? "" : singleRequest ? "✓" : names.join(", "),
+    ];
+    for (const value of cells) {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.appendChild(td);
+    }
+    if (mkvp.title) {
+      tr.cells[6].title = mkvp.title;
+    }
+    rows.appendChild(tr);
+  }
+}
+
+function renderMkvpOptions(devices, row, cardType) {
+  const select = row.querySelector(".cg-mkvp");
+  const previous = select.value;
+  const { domain, field } = mkvpAttr(cardType);
+  const key = `${domain}/${field}`;
+  const values = new Set();
+  for (const d of devices) {
+    const value = d.attrs[key];
+    if (isMkvpValue(value)) {
+      values.add(value);
+    }
+  }
+  select.textContent = "";
+  const addOption = (value, label) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    select.appendChild(option);
+  };
+  addOption("", "no pin");
+  for (const value of [...values].sort()) {
+    addOption(value, value);
+  }
+  addOption("__custom__", "Custom…");
+  select.value = [...select.options].some((o) => o.value === previous)
+    ? previous
+    : "";
+}
+
+function renderVisibility(state) {
+  el("cg-vm-fields").hidden = state.deviceClass !== DEVICE_CLASS_VM;
+  el("cg-container-warning").hidden = state.deviceClass !== DEVICE_CLASS_CONTAINER;
+  el("cg-workload-heading").textContent =
+    state.deviceClass === DEVICE_CLASS_VM ? "VirtualMachine" : "Pod";
+  state.requests.forEach((r, index) => {
+    const mkvpVisible = r.cardType === "cca" || r.cardType === "ep11";
+    r.row.querySelector(".cg-mkvp-wrap").hidden = !mkvpVisible;
+    if (!mkvpVisible) {
+      r.row.querySelector(".cg-mkvp").value = "";
+      r.row.querySelector(".cg-mkvp-custom").value = "";
+    }
+    r.row.querySelector(".cg-mkvp-custom").hidden =
+      r.row.querySelector(".cg-mkvp").value !== "__custom__";
+    r.row.querySelector(".cg-remove-wrap").hidden = index === 0;
+  });
+  el("cg-colocate-wrap").hidden = state.totalCount <= 1;
+  if (state.totalCount <= 1) {
+    el("cg-colocate").value = "";
+  }
+}
+
+function renderFieldWarnings(state) {
+  const nameProblem = !RFC1123_LABEL.test(state.name) || state.name.length > 57;
+  setWarning(
+    "cg-warn-name",
+    nameProblem
+      ? "Not a DNS label of at most 57 characters; kubectl will reject the manifests."
+      : ""
+  );
+  setWarning(
+    "cg-warn-namespace",
+    RFC1123_LABEL.test(state.namespace)
+      ? ""
+      : "Not a DNS label; kubectl will reject the manifests."
+  );
+  let colocateWarning = "";
+  if (state.totalCount > 1) {
+    const concreteTypes = new Set(
+      state.requests.map((r) => r.cardType).filter((t) => t !== "any")
+    );
+    if (state.matchAttribute === "" && state.deviceClass === DEVICE_CLASS_VM) {
+      colocateWarning =
+        "Without a constraint the driver usually rejects a multi-queue VM claim at prepare time (the mediated device needs a full adapter × domain rectangle); pick same domain (apqi).";
+    } else if (state.matchAttribute.endsWith("/apid") && concreteTypes.size > 1) {
+      colocateWarning =
+        "Different card types never share an adapter; with same adapter (apid) this claim cannot be allocated.";
+    }
+  }
+  setWarning("cg-warn-colocate", colocateWarning);
+  for (const r of state.requests) {
+    const customVisible =
+      !r.row.querySelector(".cg-mkvp-wrap").hidden &&
+      r.row.querySelector(".cg-mkvp").value === "__custom__";
+    setWarningEl(
+      r.row.querySelector(".cg-warn-mkvp"),
+      customVisible && r.mkvp && !HEX_VALUE.test(r.mkvp)
+        ? "Not a lowercase hex value; the selector will match no queue."
+        : ""
+    );
+  }
+  if (state.deviceClass === DEVICE_CLASS_VM) {
+    let keyWarning = "";
+    if (state.sshKey === "") {
+      keyWarning =
+        "Without a key, ssh password login is enabled (user fedora, password fedora); paste a key for key-only login.";
+    } else if (!SSH_KEY_PREFIX.test(state.sshKey)) {
+      keyWarning =
+        "Does not look like an OpenSSH public key (ssh-ed25519, ssh-rsa, ecdsa-*); the guest will not accept login.";
+    }
+    setWarning("cg-warn-sshkey", keyWarning);
+    setWarning(
+      "cg-warn-memory",
+      QUANTITY.test(state.memory) ? "" : "Not a Kubernetes quantity (for example 1Gi)."
+    );
+  }
+}
+
+// --- Section E: wiring ---------------------------------------------------
+
+let lastGoodDevices = [];
+let lastGoodForeign = 0;
+let lastGoodEmpty = true;
+let lastParsedText = null;
+let rowSeq = 0;
+
+// Rows are stamped from the template; cloned ids get a unique suffix so
+// labels stay associated while all JS lookups go through the row-scoped
+// classes.
+function addRequestRow() {
+  const row = el("cg-request-template").content.firstElementChild.cloneNode(true);
+  const suffix = `-r${rowSeq++}`;
+  for (const label of row.querySelectorAll("label[for]")) {
+    label.htmlFor += suffix;
+  }
+  for (const node of row.querySelectorAll("[id]")) {
+    node.id += suffix;
+  }
+  el("cg-requests").appendChild(row);
+}
+
+function update() {
+  const text = el("cg-inventory").value;
+  if (text !== lastParsedText) {
+    lastParsedText = text;
+    try {
+      const parsed = parseInventory(text);
+      lastGoodDevices = parsed.devices;
+      lastGoodForeign = parsed.foreignSlices;
+      lastGoodEmpty = parsed.empty;
+      setWarning("cg-inventory-error", "");
+    } catch (err) {
+      setWarning("cg-inventory-error", `JSON parse error: ${err.message}`);
+    }
+  }
+  const state = readFormState();
+  renderVisibility(state);
+  for (const r of state.requests) {
+    renderMkvpOptions(lastGoodDevices, r.row, r.cardType);
+  }
+  const names = deriveRequestNames(state.requests);
+  const requests = state.requests.map((r, i) => ({
+    ...r,
+    name: names[i],
+    selectors: buildSelectors(r),
+  }));
+  const matches = computeMatches(lastGoodDevices, requests, state);
+  renderTable(
+    lastGoodDevices,
+    matches.matchNames,
+    requests.length === 1,
+    lastGoodForeign,
+    lastGoodEmpty
+  );
+  setText("cg-match-summary", summarize(lastGoodDevices, matches, requests, state));
+  renderFieldWarnings(state);
+  setText("cg-yaml-claim", wrapKubectlApply(renderClaimYaml(state, requests)));
+  setText(
+    "cg-yaml-workload",
+    wrapKubectlApply(
+      state.deviceClass === DEVICE_CLASS_VM ? renderVmYaml(state, requests) : renderPodYaml(state)
+    )
+  );
+  setText("cg-verify", renderVerifyCommands(state));
+}
+
+function copyText(text, button) {
+  const done = () => {
+    const label = button.textContent;
+    button.textContent = "Copied";
+    setTimeout(() => {
+      button.textContent = label;
+    }, 1500);
+  };
+  // Fallback for contexts where the clipboard API is missing or denied
+  // (plain-http previews, restrictive permission policies).
+  const fallback = () => {
+    const scratch = document.createElement("textarea");
+    scratch.value = text;
+    scratch.setAttribute("readonly", "");
+    scratch.style.position = "absolute";
+    scratch.style.left = "-9999px";
+    document.body.appendChild(scratch);
+    scratch.select();
+    document.execCommand("copy");
+    document.body.removeChild(scratch);
+    done();
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done, fallback);
+  } else {
+    fallback();
+  }
+}
+
+function init() {
+  const root = el("claim-generator");
+  if (!root) {
+    return;
+  }
+  root.hidden = false;
+  root.addEventListener("input", update);
+  root.addEventListener("change", update);
+  root.addEventListener("click", (event) => {
+    if (event.target.closest("#cg-add-request")) {
+      addRequestRow();
+      update();
+      return;
+    }
+    const remove = event.target.closest(".cg-remove");
+    if (remove) {
+      remove.closest(".cg-request").remove();
+      update();
+      return;
+    }
+    const button = event.target.closest(".cg-copy");
+    if (!button) {
+      return;
+    }
+    copyText(el(button.dataset.cgTarget).textContent, button);
+  });
+  el("cg-load-sample").addEventListener("click", () => {
+    el("cg-inventory").value = JSON.stringify(sampleInventory, null, 2);
+    update();
+  });
+  addRequestRow();
+  update();
+}
+
+init();
+})();
+</script>
+<!-- generator:script end -->
+</body>
+</html>

@@ -1,0 +1,36 @@
+# Required quality gate - correctness linters only.
+# Run via: make lint   (or: golangci-lint run)
+# Counterpart: .golangci-health.yml (advisory, metrics).
+
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - godot
+    - govet
+    - ineffassign
+    - misspell
+    - staticcheck
+    - unparam
+    - unused
+  settings:
+    # Comment style per https://go.dev/wiki/CodeReviewComments
+    godot:
+      scope: declarations
+      capital: false
+    unused:
+      # Count only reads as uses, so a struct field that is assigned and
+      # never read is reported. Default true hides that whole class:
+      # `unused` sees the assignment and calls the field live.
+      # Exported fields stay exempt through exported-fields-are-used, left
+      # at its default, so unmarshal targets are unaffected. The one new
+      # false positive is an unexported field read only through struct
+      # equality or a struct conversion. //nolint:unused covers that.
+      field-writes-are-uses: false
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

@@ -1,0 +1,8 @@
+# Prettier is scoped to markdown under docs/, the public doc set (make
+# md-fmt, make md-fmt-check). Nothing else is formatted with it.
+#
+# Prose there follows sentence-per-line: every sentence ends its line,
+# no mid-sentence wrapping at a column. "preserve" keeps those breaks
+# untouched - "always" would re-wrap at a column and "never" would join
+# each paragraph into one line, both destroying the convention.
+proseWrap: preserve

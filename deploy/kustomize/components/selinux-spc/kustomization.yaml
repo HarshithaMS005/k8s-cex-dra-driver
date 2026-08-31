@@ -1,0 +1,48 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Opt-in: runs the plugin container SELinux-unconfined by setting
+# seLinuxOptions.type: spc_t. For nodes with SELinux in *enforcing* mode (the
+# default on Fedora/RHEL/CentOS). Without it the hardened base runs as the
+# confined domain `container_t`, which is denied write/create/add_name on
+# `sysfs_t` and so cannot do the AP sysfs writes (driver_override, vfio_ap
+# matrix, mdev remove). The AP sysfs files are kernel-labeled `sysfs_t` via
+# genfscon and have no xattr backing, so they cannot be relabeled. The only
+# lever is the container's SELinux *domain*, set here.
+#
+# `spc_t` is stock - it ships in the `container-selinux` policy package present
+# on every Fedora/RHEL/CentOS container node, so there is nothing to install. It
+# relaxes only the MAC axis - the one piece `privileged` would have switched on
+# anyway. The base's other hardening is untouched: capabilities stay dropped,
+# the device cgroup stays restricted, seccomp stays on (the merge below adds
+# seLinuxOptions to the container securityContext without replacing it).
+#
+# This leaves Pod Security baseline for the type field: `seLinuxOptions.type`
+# under baseline is restricted to container_t / container_init_t /
+# container_kvm_t / container_engine_t, so any non-default type (spc_t included)
+# requires the privileged PSS tier or a namespace exception - the same as any
+# node device agent. Harmless on permissive / SELinux-disabled / non-SELinux
+# nodes: the runtime ignores the field there.
+#
+# Consumer-side files are a separate, already-solved concern and need nothing
+# here: the CDI specs containerd reads and the KEP-5304 metadata qemu reads live
+# on real filesystems and are relabeled to `container_file_t` by the runtime /
+# KubeVirt's own virt-chroot relabel - only the unrelabelable sysfs writes need
+# this component.
+patches:
+  - target:
+      kind: DaemonSet
+      name: cex-dra-driver
+    patch: |-
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: cex-dra-driver
+      spec:
+        template:
+          spec:
+            containers:
+              - name: plugin
+                securityContext:
+                  seLinuxOptions:
+                    type: spc_t

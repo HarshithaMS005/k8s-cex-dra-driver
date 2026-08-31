@@ -1,0 +1,79 @@
+
+
+# <type>(<scope>)<!>: <subject>
+#
+# <body>
+#
+# <footer>
+#
+#
+# Examples:
+#   feat: add CEX card discovery mechanism
+#   
+#   Implement automatic discovery of CEX cryptographic cards
+#   on the host system. This enables dynamic allocation without
+#   manual configuration.
+#   
+#   Signed-off-by: Jane Doe <jane@example.com>
+#   
+#   ---
+#   
+#   fix(kata): resolve device allocation race condition
+#   
+#   Signed-off-by: John Smith <john@example.com>
+#
+#
+# --- Full Commit Message Guidelines ---
+#
+# Format derived from Conventional Commits v1.0.0:
+# https://www.conventionalcommits.org/en/v1.0.0/
+#
+# Type (Required - Conventional Commits):
+#   feat     - A new feature
+#   fix      - A bug fix
+#   docs     - Documentation only changes
+#   style    - Code style changes (formatting, missing semi colons, etc)
+#   refactor - Code change that neither fixes a bug nor adds a feature
+#   test     - Adding missing tests or correcting existing tests
+#   chore    - Changes to build process or auxiliary tools
+#   perf     - Performance improvements
+#   ci       - Changes to CI configuration files and scripts
+#
+# Scope (Optional - Conventional Commits + Project Specific):
+#   driver   - Core DRA driver functionality
+#   kata     - Kata container integration  
+#   kubevirt - KubeVirt VMI integration
+#   api      - API definitions and interfaces
+#   config   - Configuration handling
+#   tests    - Test-related changes
+#   ...      - Any other ... single word, lowercase
+#
+# ! (Optional - Conventional Commits):
+#   - mark a commit as BREAKING CHANGE
+#
+# Subject (Kubernetes contributor guide):
+#   - 50 characters or less (hard limit: 72 chars)
+#   - Capitalize first word (unless starts with lowercase symbol)
+#   - No period at end
+#   - Use imperative mood ("add" not "added")
+#   Source: https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md
+#
+# Body (Optional - Kubernetes + Go project standards):
+#   - Separate from subject with blank line
+#   - Wrap at 72 characters
+#   - Explain what and why, not how
+#   - Use present tense
+#   Source: https://go.dev/wiki/CommitMessage
+#
+# Footer (REQUIRED - DCO):
+#   Signed-off-by: Firstname Lastname <email@example.com>
+#   - Certifies compliance with Developer Certificate of Origin (DCO)
+#   - https://developercertificate.org/
+#   - Use: git commit -s or add manually
+#   Source: https://go.dev/wiki/CommitMessage
+#
+# What NOT to include (Kubernetes guidelines):
+#   - No @mentions (use PR descriptions instead)
+#   - No "Address review comments" type messages
+#
+# To use this template: git config commit.template .gitmessage
