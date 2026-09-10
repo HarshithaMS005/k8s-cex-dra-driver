@@ -1,0 +1,62 @@
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: single-${CTYPE}-ap-queue-vm
+  namespace: ${TEST_NS}
+spec:
+  spec:
+    devices:
+      requests:
+        - name: ${REQ}
+          exactly:
+            deviceClassName: ap-queue.virtual-machine.ibm.com
+            allocationMode: ExactCount
+            count: 1
+            selectors:
+              - cel:
+                  expression: device.attributes["cex.ibm.com"].type == "${CTYPE}"
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachineInstance
+metadata:
+  name: ${VM_NAME}
+  namespace: ${TEST_NS}
+spec:
+  domain:
+    devices:
+      disks:
+        - name: containerdisk
+          disk:
+            bus: virtio
+        - name: cloudinit
+          disk:
+            bus: virtio
+      hostDevices:
+        - name: cex-${CTYPE}
+          claimName: claim0
+          requestName: ${REQ}
+      rng: {}
+    resources:
+      requests:
+        memory: 1Gi
+      limits:
+        memory: 1Gi
+  volumes:
+    - name: containerdisk
+      containerDisk:
+        image: ${FEDORA_DISK}
+    - name: cloudinit
+      cloudInitNoCloud:
+        userData: |-
+          #cloud-config
+          user: fedora
+          password: fedora
+          chpasswd: { expire: False }
+          ssh_pwauth: True
+          ssh_authorized_keys:
+            - ${SSH_PUB}
+          packages:
+            - s390utils-base
+  resourceClaims:
+    - name: claim0
+      resourceClaimTemplateName: single-${CTYPE}-ap-queue-vm
