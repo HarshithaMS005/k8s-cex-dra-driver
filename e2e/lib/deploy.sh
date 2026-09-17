@@ -46,9 +46,12 @@ build_image() {
 
 push_image() {
   [[ -n "${IMAGE}" ]] || fail "registry address not set (install_registry first)"
-  echo "Pushing ${IMAGE} (HTTP registry, tls-verify=false)"
+  local local_port="${REGISTRY_LOCAL_PORT:-5000}"
+  local push_target="127.0.0.1:${local_port}/${PLUGIN_REPO}:${IMAGE_TAG}"
+  podman tag "${IMAGE}" "${push_target}"
+  echo "Pushing ${push_target} via port-forward (HTTP registry, tls-verify=false)"
   for attempt in 1 2 3; do
-    if podman push --tls-verify=false "${IMAGE}"; then
+    if podman push --tls-verify=false "${push_target}"; then
       break
     fi
     [[ "$attempt" == "3" ]] && fail "podman push failed after 3 attempts"
