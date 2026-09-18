@@ -76,6 +76,7 @@ source "${SCRIPT_DIR}/lib/vm.sh"
 # 1-2), or run './deploy-cex-dra-fedora.sh clean' to tear everything down.
 on_exit() {
   local rc=$?
+  _stop_guest_ssh_helper 2>/dev/null || true
   stop_registry_port_forward
   if [[ $rc -ne 0 ]]; then
     echo >&2

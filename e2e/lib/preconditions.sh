@@ -32,7 +32,7 @@ run_on_node() {
   #   quay.io/fedora/fedora:44  — provides bash + base64 for the init container
   #   registry.k8s.io/pause:3.10.1 — sandbox image used by Kubernetes 1.36
   local encoded_snippet
-  encoded_snippet="$(printf '%s' "$snippet" | base64 -w0)"
+  encoded_snippet="$(b64encode "$snippet")"
 
   kubectl run "${pod_name}" \
     --restart=Never \

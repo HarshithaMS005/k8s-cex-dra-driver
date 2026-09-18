@@ -19,9 +19,11 @@ podman build --platform=linux/s390x \
 podman push cex-dra-kubeletplugin:v1.0.0-alpha.0 registry.example.com/cex-dra-kubeletplugin:v1.0.0-alpha.0
 ```
 
-The build stage always cross-compiles the binary for s390x, but the runtime base image is pulled for the build host's architecture by default.
-`--platform=linux/s390x` keeps the two consistent.
-Without it, a build on a non-s390x machine produces an image that will not run on the cluster nodes.
+The compile stage uses `--platform=$BUILDPLATFORM` so `make` runs natively on the build host and cross-compiles (`GOOS=linux GOARCH=s390x`).
+The runtime stage is always `linux/s390x`.
+`podman build --platform=linux/s390x` labels the result for IBM Z nodes.
+No QEMU is required.
+Without `--platform=linux/s390x` on the build command, a non-s390x machine can produce an image whose manifest architecture will not run on the cluster nodes.
 On an s390x host the flag is a no-op.
 
 The `VERSION` build argument carries the build identity the binary reports, from `--version` and as its first log line.

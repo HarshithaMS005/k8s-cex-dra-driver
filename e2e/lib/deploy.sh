@@ -37,6 +37,8 @@ build_image() {
   local version="$(git describe --tags --always --dirty --long)"
   mkdir -p "${WORK_DIR}"
   info "CI build ${IMAGE} from ${version}"
+  # --platform=linux/s390x labels the image for IBM Z. The Dockerfile compile
+  # stage uses $BUILDPLATFORM so this does not need QEMU on a laptop.
   podman build --platform=linux/s390x \
     --build-arg VERSION="${version}" \
     --no-cache \
@@ -46,8 +48,11 @@ build_image() {
 
 push_image() {
   [[ -n "${IMAGE}" ]] || fail "registry address not set (install_registry first)"
+  start_registry_port_forward
   local local_port="${REGISTRY_LOCAL_PORT:-5000}"
-  local push_target="127.0.0.1:${local_port}/${PLUGIN_REPO}:${IMAGE_TAG}"
+  local push_host
+  push_host="$(registry_push_host)"
+  local push_target="${push_host}:${local_port}/${PLUGIN_REPO}:${IMAGE_TAG}"
   podman tag "${IMAGE}" "${push_target}"
   echo "Pushing ${push_target} via port-forward (HTTP registry, tls-verify=false)"
   for attempt in 1 2 3; do
@@ -70,8 +75,13 @@ prepare_overlay() {
     rm -rf "$od"
     cp -a "$template" "$od"
   fi
-  sed -i "0,/newName:/{s|\(newName:[[:space:]]*\).*|\1${IMAGE_NAME}|}" "$od/kustomization.yaml"
-  sed -i "0,/newTag:/{s|\(newTag:[[:space:]]*\).*|\1${IMAGE_TAG}|}" "$od/kustomization.yaml"
+  # GNU `sed -i` and `0,/pat/` are not portable (macOS BSD sed). `-i.bak`
+  # is accepted by both; there is only one newName/newTag pair in the overlay.
+  sed -i.bak \
+    -e "s|^[[:space:]]*newName:.*|    newName: ${IMAGE_NAME}|" \
+    -e "s|^[[:space:]]*newTag:.*|    newTag: ${IMAGE_TAG}|" \
+    "$od/kustomization.yaml"
+  rm -f "$od/kustomization.yaml.bak"
   echo "$od/kustomization.yaml -> ${IMAGE_NAME} ${IMAGE_TAG}"
 }
 
