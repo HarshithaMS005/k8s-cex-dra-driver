@@ -14,11 +14,11 @@
 # Uses the create→wait→logs→delete flow instead of --attach to avoid the
 # well-known race where kubectl loses the attach connection on fast-exiting pods.
 #
-# Usage: run_on_node <snippet>
-# Exits non-zero (and prints the pod log) when the snippet exits non-zero.
-run_on_node() {
+# Usage: run_on_node <snippet>   — fail the e2e script if the snippet fails
+#        _run_on_node <snippet>  — return the snippet exit code (cleanup)
+_run_on_node() {
   local snippet="$1"
-  local node pod_name="cex-precond-check"
+  local node pod_name="cex-e2e-node"
   node="$(kubectl get nodes --no-headers -o custom-columns=NAME:.metadata.name | head -1)"
   [[ -n "$node" ]] || fail "no Kubernetes nodes found"
 
@@ -32,7 +32,7 @@ run_on_node() {
   #   quay.io/fedora/fedora:44  — provides bash + base64 for the init container
   #   registry.k8s.io/pause:3.10.1 — sandbox image used by Kubernetes 1.36
   local encoded_snippet
-  encoded_snippet="$(printf '%s' "$snippet" | base64 -w0)"
+  encoded_snippet="$(b64encode "$snippet")"
 
   kubectl run "${pod_name}" \
     --restart=Never \
@@ -74,7 +74,8 @@ run_on_node() {
     if (( $(date +%s) >= deadline )); then
       kubectl delete pod "${pod_name}" --ignore-not-found=true \
         --wait=false >/dev/null 2>&1 || true
-      fail "timed out waiting for precondition pod on node ${node}"
+      echo "ERROR: timed out waiting for node pod on ${node}" >&2
+      return 1
     fi
     sleep 2
   done
@@ -85,13 +86,20 @@ run_on_node() {
   local exit_code
   exit_code="$(kubectl get pod "${pod_name}" \
     -o jsonpath='{.status.initContainerStatuses[0].state.terminated.exitCode}' \
-    2>/dev/null || echo 1)"
+    2>/dev/null || true)"
+  [[ -n "$exit_code" ]] || exit_code=1
 
   kubectl delete pod "${pod_name}" --ignore-not-found=true \
     --wait=false >/dev/null 2>&1 || true
 
-  if [[ "${exit_code}" != "0" ]]; then
-    fail "precondition check failed on node ${node} (exit code ${exit_code})"
+  return "${exit_code}"
+}
+
+run_on_node() {
+  local node
+  node="$(kubectl get nodes --no-headers -o custom-columns=NAME:.metadata.name | head -1)"
+  if ! _run_on_node "$1"; then
+    fail "node command failed on ${node:-unknown} (see pod log above)"
   fi
 }
 
@@ -183,16 +191,16 @@ detect_arch() {
   case "$arch" in
     s390x) ;;
     x86_64) arch=amd64 ;;
-    aarch64) arch=arm64 ;;
+    aarch64|arm64) arch=arm64 ;;
   esac
   echo "$arch"
 }
 
 download_virtctl() {
-  local ver="$1" arch="$2" bin="$3"
-  info "virtctl not on PATH; downloading virtctl ${ver} linux-${arch} to ${bin}"
+  local ver="$1" os="$2" arch="$3" bin="$4"
+  info "virtctl not on PATH; downloading virtctl ${ver} ${os}-${arch} to ${bin}"
   curl -fL -o "$bin" \
-    "https://github.com/kubevirt/kubevirt/releases/download/${ver}/virtctl-${ver}-linux-${arch}"
+    "https://github.com/kubevirt/kubevirt/releases/download/${ver}/virtctl-${ver}-${os}-${arch}"
   chmod +x "$bin"
   hash -r 2>/dev/null || true
   command -v virtctl >/dev/null 2>&1 || fail "virtctl downloaded to ${bin} but not on PATH"
@@ -201,6 +209,7 @@ download_virtctl() {
 
 ensure_virtctl() {
   local ver="$1"
+  mkdir -p "${WORK_DIR}"
   export PATH="${WORK_DIR}:${PATH}"
   if command -v virtctl >/dev/null 2>&1; then
     local installed_ver
@@ -209,10 +218,11 @@ ensure_virtctl() {
       echo "virtctl: skip (already $(command -v virtctl) ${installed_ver})"
       return
     fi
-    fail "virtctl version mismatch: have ${installed_ver} at $(command -v virtctl), need ${ver}. Please update virtctl to ${ver} and re-run."
+    echo "virtctl: have ${installed_ver:-unknown} at $(command -v virtctl); downloading ${ver} into ${WORK_DIR}"
   fi
-  local arch="$(detect_arch)"
-  mkdir -p "${WORK_DIR}"
-  local bin="${WORK_DIR}/virtctl"
-  download_virtctl "$ver" "$arch" "$bin"
+  local os arch bin
+  os="$(detect_os)"
+  arch="$(detect_arch)"
+  bin="${WORK_DIR}/virtctl"
+  download_virtctl "$ver" "$os" "$arch" "$bin"
 }

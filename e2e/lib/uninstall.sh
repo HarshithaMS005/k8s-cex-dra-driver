@@ -14,16 +14,19 @@ uninstall_registry() {
 # ---------------------------------------------------------------------------
 
 remove_vfio_ap_mdevs() {
-  [[ -d /sys/devices/vfio_ap/matrix ]] || return 0
-  local d base
-  for d in /sys/devices/vfio_ap/matrix/*; do
-    [[ -d "$d" ]] || continue
-    base="$(basename "$d")"
-    [[ "$base" =~ ^[0-9a-fA-F-]{36}$ ]] || continue
-    if [[ -w "$d/remove" ]]; then
-      echo 1 | sudo tee "$d/remove" >/dev/null || true
-    fi
-  done
+  # Sysfs lives on the node, not on the workstation. Always exit 0 so a
+  # missing module or leftover mdev cannot abort uninstall.
+  _run_on_node '
+[[ -d /sys/devices/vfio_ap/matrix ]] || exit 0
+for d in /sys/devices/vfio_ap/matrix/*; do
+  [ -d "$d" ] || continue
+  base=$(basename "$d")
+  echo "$base" | grep -Eq "^[0-9a-fA-F-]{36}$" || continue
+  [ -w "$d/remove" ] || continue
+  echo 1 > "$d/remove" || true
+done
+exit 0
+' || true
 }
 
 delete_cex_resourceslices() {

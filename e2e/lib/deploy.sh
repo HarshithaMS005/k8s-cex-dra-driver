@@ -47,7 +47,9 @@ build_image() {
 push_image() {
   [[ -n "${IMAGE}" ]] || fail "registry address not set (install_registry first)"
   local local_port="${REGISTRY_LOCAL_PORT:-5000}"
-  local push_target="127.0.0.1:${local_port}/${PLUGIN_REPO}:${IMAGE_TAG}"
+  local push_host
+  push_host="$(registry_push_host)"
+  local push_target="${push_host}:${local_port}/${PLUGIN_REPO}:${IMAGE_TAG}"
   podman tag "${IMAGE}" "${push_target}"
   echo "Pushing ${push_target} via port-forward (HTTP registry, tls-verify=false)"
   for attempt in 1 2 3; do
@@ -63,16 +65,23 @@ push_image() {
 
 # Prepare the kustomize overlay directory with the target image name and tag.
 prepare_overlay() {
-  local od="$(overlay_dir)"
+  local od
+  od="$(overlay_dir)"
   local template="${REPO_DIR}/deploy/kustomize/overlays/template"
   [[ -d "$template" ]] || fail "missing ${template} after git update"
   if [[ "$od" != "$template" ]]; then
     rm -rf "$od"
     cp -a "$template" "$od"
   fi
-  sed -i "0,/newName:/{s|\(newName:[[:space:]]*\).*|\1${IMAGE_NAME}|}" "$od/kustomization.yaml"
-  sed -i "0,/newTag:/{s|\(newTag:[[:space:]]*\).*|\1${IMAGE_TAG}|}" "$od/kustomization.yaml"
-  echo "$od/kustomization.yaml -> ${IMAGE_NAME} ${IMAGE_TAG}"
+  python3 - "$od/kustomization.yaml" "${IMAGE_NAME}" "${IMAGE_TAG}" <<'PY'
+import re, sys
+path, new_name, new_tag = sys.argv[1], sys.argv[2], sys.argv[3]
+text = open(path).read()
+text = re.sub(r"(newName:\s*)\S+", lambda m: m.group(1) + new_name, text, count=1)
+text = re.sub(r"(newTag:\s*)\S+", lambda m: m.group(1) + new_tag, text, count=1)
+open(path, "w").write(text)
+print(path, "->", new_name, new_tag)
+PY
 }
 
 # Apply the kustomize overlay and force imagePullPolicy=IfNotPresent on the daemonset.
@@ -120,16 +129,13 @@ deploy_driver() {
 }
 
 cex_type_from_cluster() {
-  local t="$(kubectl get resourceslices -o jsonpath='{.items[0].spec.devices[0].attributes.cex\.ibm\.com/type.string}' 2>/dev/null || true)"
+  local t
+  t="$(kubectl get resourceslices -o jsonpath='{.items[0].spec.devices[0].attributes.cex\.ibm\.com/type.string}' 2>/dev/null || true)"
   if [[ -n "$t" ]]; then
     echo "$t"
     return
   fi
-  if lszcrypt | grep -qi EP11; then
-    echo ep11
-  elif lszcrypt | grep -qi CCA; then
-    echo cca
-  else
-    echo ep11
-  fi
+  # Do not call lszcrypt on the workstation; default matches the EP11 lab card
+  # when the ResourceSlice attributes are not yet readable.
+  echo ep11
 }

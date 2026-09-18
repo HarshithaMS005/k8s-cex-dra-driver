@@ -134,4 +134,5 @@ check_required_tools() {
   need_cmd podman
   need_cmd curl
   need_cmd envsubst
+  need_cmd python3
 }

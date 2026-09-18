@@ -1,28 +1,37 @@
 #!/usr/bin/env bash
-# End-to-end CEX DRA on Fedora Kubernetes (t313lp42 / s390x / CRI-O).
+# End-to-end CEX DRA from a local workstation against a remote s390x cluster.
+#
+# kubectl must already reach the cluster (VPN, or an SSH tunnel to the API).
+# The script does not need to run on the CEX node:
+#   - hardware checks run in a privileged pod (chroot /host)
+#   - the in-cluster registry is probed with kubectl exec
+#   - podman push uses kubectl port-forward to 127.0.0.1:REGISTRY_LOCAL_PORT
+#     (on macOS, Podman Machine reaches that via host.containers.internal)
+#   - virtctl is downloaded for this OS/arch (linux or darwin)
 #
 #  1. Remove CEX DRA driver and in-cluster registry (if any)
 #  2. Remove KubeVirt (if any)
 #  3. Check preconditions (CEX queue, driver_override, vfio_ap, ...)
 #  4. Deploy KubeVirt
 #  5. Configure HostDevices + HostDevicesWithDRA + vfio-ap keep-list
-#  6. Start an in-cluster registry, rootless-build the driver, push, deploy
+#  6. Start an in-cluster registry, build the driver, push, deploy
 #  7. Start a VM that claims one queue
 #  8. Check the card inside the VM
 #  9. Delete the test namespace, driver, registry, and KubeVirt
 #
-# Run:
+# Run from the repo (kubeconfig already pointing at the cluster):
 #   ./e2e/cex-dra.sh
 #
-# The script uses the repository it lives in (no cloning). Kustomize overlays
-# are resolved relative to the repo root automatically.
-# CRI-O cannot pull plain HTTP without host config, so a privileged Job copies
-# the image into the node store for this run.
+# Example SSH tunnel for the API only:
+#   ssh -N -L 6443:localhost:6443 core@<node>
+#   then KUBECONFIG / cluster server https://127.0.0.1:6443
 #
 # KEEP=1          leave VM/driver/registry/KubeVirt after a successful run
 # DELETE_WAIT=120 max seconds to wait for each uninstall (then error and stop)
 # KUBEVIRT_VERSION=v1.9.0   pin KubeVirt (default: latest GitHub release, min v1.9.0)
 # IMAGE_TAG=...   default: first 12 chars of HEAD git SHA
+# REGISTRY_LOCAL_PORT=5000  local end of the registry port-forward
+# REGISTRY_PUSH_HOST=...    override podman push host (macOS default: host.containers.internal)
 
 set -euo pipefail
 
@@ -98,7 +107,7 @@ final_cleanup() {
   assert_registry_gone
   assert_kubevirt_gone
   echo "Node lszcrypt after cleanup (queue should be back on the node):"
-  run_on_node 'lszcrypt || true' || true
+  _run_on_node 'lszcrypt || true' || true
 }
 
 # ---------------------------------------------------------------------------
@@ -153,7 +162,7 @@ do_all() {
     info "KEEP=1: leaving VM, driver, registry, and KubeVirt"
     echo "VM: kubectl -n ${TEST_NS} get vmi ${VM_NAME}"
     echo "SSH: virtctl ssh -n ${TEST_NS} -i ${SSH_PRIV} fedora@vmi/${VM_NAME}"
-    echo "registry: http://${REGISTRY_ADDR}/v2/"
+    echo "registry (port-forward): http://127.0.0.1:${REGISTRY_LOCAL_PORT}/v2/"
     return
   fi
   final_cleanup

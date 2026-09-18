@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Registry and workload management helpers for e2e tests.
+# The workstation talks to the in-cluster registry only through kubectl
+# (exec for readiness, port-forward for podman push). NodePort is not required
+# on the laptop; an SSH tunnel to the API is enough.
 
 node_internal_ip() {
   local ip
